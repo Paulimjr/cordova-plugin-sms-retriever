@@ -1,0 +1,17 @@
+{
+  "name": "com.outsystems.smsretriever",
+  "version": "1.0.0",
+  "description": "SMS Retriever API plugin",
+  "cordova": {
+    "id": "com.outsystems.smsretriever",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "Paulo Camilo",
+  "license": "ISC"
+}
