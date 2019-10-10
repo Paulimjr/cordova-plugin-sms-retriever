@@ -19,7 +19,7 @@
     <!-- Adding files and gradle configuration to SmsRetrieverPlugin -->
     <source-file src="src/android/SmsRetrieverPlugin.java" target-dir="src/com/outsystems/smsretriever" />
     <source-file src="src/android/OtpReceivedInterface.java" target-dir="src/com/outsystems/smsretriever" />
-    <source-file src="src/android/SmsBroadcastReceiver.java" target-dir="src/com/outsystems/smsretriever" />
+    <source-file src="src/android/SmsRetrieverHandler.java" target-dir="src/com/outsystems/smsretriever" />
     <source-file src="src/android/AppSignatureHelper.java" target-dir="src/com/outsystems/smsretriever" />
 
     <framework custom="true" src="src/android/sms-retriever.gradle" type="gradleReference" />

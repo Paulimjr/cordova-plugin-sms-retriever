@@ -1,8 +1,6 @@
 package com.outsystems.smsretriever;
 
-import android.content.IntentFilter;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -13,7 +11,10 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,12 +25,19 @@ import java.util.regex.Pattern;
 /**
  * Created on : Oct 10, 2019 Author : Paulo Camilo
  */
-public class SmsRetrieverPlugin extends CordovaPlugin implements OtpReceivedInterface {
+public class SmsRetrieverPlugin extends CordovaPlugin {
 
     private static final String GENERATE_HASH_KEY = "generateHashKey";
     private static final String START_SMS_LISTENER = "startSmsListener";
     private static final String INVALID_ACTION = "Invalid or not found action.";
     private CallbackContext callbackContext;
+    private SmsRetrieverHandler smsRetrieverHandler;
+
+    @Override
+    public void initialize(CordovaInterface cordova, CordovaWebView webView) {
+        super.initialize(cordova, webView);
+        smsRetrieverHandler = new SmsRetrieverHandler(cordova.getActivity());
+    }
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
@@ -41,9 +49,35 @@ public class SmsRetrieverPlugin extends CordovaPlugin implements OtpReceivedInte
             }
 
             if (START_SMS_LISTENER.equals(action)) {
-                startSMSListener();
-            }
 
+                startSMSListener();
+                smsRetrieverHandler.startBroadcastReceiver();
+
+                smsRetrieverHandler.setOtpReceivedCallback(new OtpReceivedInterface<String>() {
+                    @Override
+                    public void onOtpReceived(String otp) {
+                        Log.v("onOtpReceived", otp);
+                        String codeReceived = getOTPCode(otp);
+                        JSONObject objectCode = new JSONObject();
+
+                        try {
+                            objectCode.put("code", codeReceived);
+                            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, objectCode);
+                            pluginResult.setKeepCallback(true);
+                            callbackContext.sendPluginResult(pluginResult);
+                        } catch (JSONException e) {
+                            callbackContext.error(e.getMessage());
+                            Log.v("JSONException", e.getMessage());
+                        }
+                    }
+
+                    @Override
+                    public void onOtpTimeout() {
+                        startSMSListener();
+                        smsRetrieverHandler.startBroadcastReceiver();
+                    }
+                });
+            }
         } else {
             this.callbackContext.error(INVALID_ACTION);
         }
@@ -72,26 +106,13 @@ public class SmsRetrieverPlugin extends CordovaPlugin implements OtpReceivedInte
             }
         });
 
-        initializeSmsBroadcastReceiver();
     }
 
     @Override
     public void onResume(boolean multitasking) {
         super.onResume(multitasking);
         startSMSListener();
-    }
-
-    /**
-     * Initialize the SMS broadcast receiver
-     */
-    private void initializeSmsBroadcastReceiver() {
-        // init broadcast receiver
-        SmsBroadcastReceiver mSmsBroadcastReceiver = new SmsBroadcastReceiver();
-        mSmsBroadcastReceiver.setOnOtpListeners(this);
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(SmsRetriever.SMS_RETRIEVED_ACTION);
-        this.cordova.getActivity().registerReceiver(mSmsBroadcastReceiver, intentFilter);
+        smsRetrieverHandler.startBroadcastReceiver();
     }
 
     /**
@@ -104,31 +125,10 @@ public class SmsRetrieverPlugin extends CordovaPlugin implements OtpReceivedInte
         JSONObject objectHashKey = new JSONObject();
         try {
             objectHashKey.put("hashKey", hashKey);
-
             this.callbackContext.success(objectHashKey);
         } catch (JSONException e) {
             this.callbackContext.error(e.getMessage());
         }
-    }
-
-    @Override
-    public void onOtpReceived(String otp) {
-        Log.v("onOtpReceived", otp);
-        String codeReceived = getOTPCode(otp);
-        JSONObject objectCode = new JSONObject();
-
-        try {
-            objectCode.put("code", codeReceived);
-            this.callbackContext.success(objectCode);
-        } catch (JSONException e) {
-            this.callbackContext.error(e.getMessage());
-        }
-    }
-
-    @Override
-    public void onOtpTimeout() {
-        Log.v("TIME OUT", "Time out, please resend");
-        startSMSListener();
     }
 
     /**
