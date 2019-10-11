@@ -2,8 +2,6 @@ package com.outsystems.smsretriever;
 
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-
 import com.google.android.gms.auth.api.phone.SmsRetriever;
 import com.google.android.gms.auth.api.phone.SmsRetrieverClient;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -14,7 +12,6 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
-import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -62,9 +59,7 @@ public class SmsRetrieverPlugin extends CordovaPlugin {
 
                         try {
                             objectCode.put("code", codeReceived);
-                            PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, objectCode);
-                            pluginResult.setKeepCallback(true);
-                            callbackContext.sendPluginResult(pluginResult);
+                            callbackContext.success(objectCode);
                         } catch (JSONException e) {
                             callbackContext.error(e.getMessage());
                             Log.v("JSONException", e.getMessage());
@@ -101,7 +96,7 @@ public class SmsRetrieverPlugin extends CordovaPlugin {
 
         mTask.addOnFailureListener(new OnFailureListener() {
             @Override
-            public void onFailure(@NonNull Exception e) {
+            public void onFailure(Exception e) {
                 Log.v("onFailure", "Error to start listener: " + e.getMessage());
             }
         });
@@ -125,6 +120,7 @@ public class SmsRetrieverPlugin extends CordovaPlugin {
         JSONObject objectHashKey = new JSONObject();
         try {
             objectHashKey.put("hashKey", hashKey);
+            Log.v("hashKey", hashKey);
             this.callbackContext.success(objectHashKey);
         } catch (JSONException e) {
             this.callbackContext.error(e.getMessage());
